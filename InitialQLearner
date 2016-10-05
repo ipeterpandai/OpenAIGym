@@ -1,5 +1,5 @@
 """
-Solving OpenAI Gym Cartpole V1 with DQN.
+Solve OpenAI Gym Cartpole V1 with DQN.
 """
 import gym
 
@@ -16,7 +16,7 @@ class DeepQLearningAgent(object):
         self._dim_state = state_space.shape[0]
         self._dim_action = action_space.n
         self._batch_size = 400
-        self._gamma = 0.95
+        self._gamma = 0.99
 
         self._prev_state = None
         self._prev_action = None
@@ -29,6 +29,7 @@ class DeepQLearningAgent(object):
         # rewards.
         #
         # value(prev_state) = reward + gamma * value*(next_state)
+        # Weights and Bias
         w1 = tf.random_uniform([self._dim_state, 128], -1.0, 1.0)
         w1 = tf.Variable(w1)
         b1 = tf.random_uniform([128], -1.0, 1.0)
@@ -64,6 +65,7 @@ class DeepQLearningAgent(object):
         hidden_1 = tf.nn.relu(tf.matmul(next_states, w1) + b1)
         hidden_2 = tf.nn.relu(tf.matmul(hidden_1, w2) + b2)
         hidden_3 = tf.nn.relu(tf.matmul(hidden_2, w3) + b3)
+
         next_action_values = tf.squeeze(tf.matmul(hidden_3, w4) + b4)
         next_values = prev_rewards + self._gamma * \
             tf.reduce_max(next_action_values, reduction_indices=1)
@@ -82,12 +84,8 @@ class DeepQLearningAgent(object):
 
         self._tf_session.run(tf.initialize_all_variables())
 
-
-
-
         # Build the D which keeps experiences.
         self._time = 0
-        # Messing with Epsilon
         self._epislon = 1.0
         self._epislon_decay_time = 100
         self._epislon_decay_rate = 0.95
@@ -181,10 +179,10 @@ class DeepQLearningAgent(object):
 
 if __name__ == '__main__':
     env = gym.make('CartPole-v1')
-    env.monitor.start('training_dir', force=True)
+    env.monitor.start('DQNLearner', force=True)
 
-    max_episodes = 2000
-    max_steps = 500
+    max_episodes = 500
+    max_steps = 199
     running_reward = []
 
     agent = DeepQLearningAgent(env.observation_space, env.action_space)
@@ -194,7 +192,7 @@ if __name__ == '__main__':
 
         for step in xrange(max_steps):
             if done and step + 1 < max_steps:
-                reward = -5000.0
+                reward = -1000.0
                 observation = np.zeros_like(observation)
 
             action = agent.act(observation, reward, done)
@@ -207,7 +205,7 @@ if __name__ == '__main__':
 
                 avg_reward = sum(running_reward) / float(len(running_reward))
 
-                print "{} - {} - {}".format(episode, step, avg_reward)
+                print "episode {} - Step {} - Avg Reward {}".format(episode, step, avg_reward)
 
                 break
 
