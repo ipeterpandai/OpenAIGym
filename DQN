@@ -6,27 +6,27 @@ import tensorflow as tf
 import math
 import random
 import bisect
-import nplot
+
 
 # HYPERPARMETERS
-H = 50
-H2 = 50
+H = 200
+H2 = 200
 batch_number = 500
-gamma = 0.995
+gamma = 0.999
 num_of_ticks_between_q_copies = 1000
-explore_decay = 0.99995
+explore_decay = 0.9995
 min_explore = 0.05
 max_steps = 199    
 max_episodes = 1500
-memory_size = 20000
+memory_size = 100000
 learning_rate = 1e-3
     
 
 if __name__ == '__main__':
-
+    #Setup open AI gym
     env = gym.make('CartPole-v0')
     env.monitor.start('training_dir', force=True)
-    #Setup tensorflow
+    
     
     tf.reset_default_graph()
 
@@ -65,16 +65,16 @@ if __name__ == '__main__':
             b3_prime_update]
 
 
-    #First Q 3 Layered Network
+    #First Q 3 Layered Network without dropout
     states_placeholder = tf.placeholder(tf.float32, [None, env.observation_space.shape[0]])
     hidden_1 = tf.nn.relu(tf.matmul(states_placeholder, w1) + b1)
     hidden_2 = tf.nn.relu(tf.matmul(hidden_1, w2) + b2)
-    hidden_2 = tf.nn.dropout(hidden_2, .5)
+    #hidden_2 = tf.nn.dropout(hidden_2, .5)
     Q = tf.matmul(hidden_2, w3) + b3
-    #Second Q 3 Layered Network
+    #Second Q 3 Layered Network without dropout
     hidden_1_prime = tf.nn.relu(tf.matmul(states_placeholder, w1_prime) + b1_prime)
     hidden_2_prime = tf.nn.relu(tf.matmul(hidden_1_prime, w2_prime) + b2_prime)
-    hidden_2_prime = tf.nn.dropout(hidden_2_prime, .5)
+    #hidden_2_prime = tf.nn.dropout(hidden_2_prime, .5)
     Q_prime =  tf.matmul(hidden_2_prime, w3_prime) + b3_prime
 
     action_used_placeholder = tf.placeholder(tf.int32, [None], name="action_masks") 
@@ -89,8 +89,7 @@ if __name__ == '__main__':
     #Setting up the enviroment
 
     D = []
-    explore = 1.0
-    
+    explore =   1
     rewardList = []
     past_actions = []
     
@@ -149,7 +148,7 @@ if __name__ == '__main__':
                 state = new_state
 
                
-                if done: 
+                if done : 
                     break
                 
                 #Training a Batch
@@ -183,7 +182,7 @@ if __name__ == '__main__':
                 if ticks % num_of_ticks_between_q_copies == 0:
                     sess.run(all_assigns)
                     
-            if episode % 30 == 0:
+            if episode % 10 == 0:
                         teststate = [0 for x in xrange(env.observation_space.shape[0])]
                         #print "S: ", teststate
                         X=[]
@@ -198,35 +197,10 @@ if __name__ == '__main__':
                         ystep = ymax/100.0
 
                         test_state_list = []
-                        for x in nplot.drange(xmin,xmax, xstep):
-                            for y in nplot.drange(ymin,ymax,ystep):
-                                teststate[xind] = x
-                                teststate[yind] = y
-                                test_state_list.append([teststate[x] for x in xrange(len(teststate))])
-
-                        test_q_list = sess.run(Q, feed_dict={states_placeholder:test_state_list})
-                        zmax = max(map(max,test_q_list))
-                        ind = 0
-                        for x in nplot.drange(xmin,xmax, xstep):
-                            XX = []
-                            YY = []
-                            ZZ = []
-                            ZZR = []
-                            for y in nplot.drange(ymin,ymax,ystep):
-                                XX.append(x)
-                                YY.append(y)
-                                ZZ.append(test_q_list[ind][0])
-                                ZZR.append(test_q_list[ind][1])
-                                ind += 1
-                            X.append(XX)
-                            Y.append(YY)
-                            Z.append(ZZ)
-                            ZR.append(ZZR)
-                        nplot.plot(X,Y,Z, ZR, xmin,ymax,zmax)
 
 
                 
-            print 'Reward for episode %f is %f. Explore is %f' %(episode,reward_sum, explore)
+            print 'Reward for episode %f is %f.' %(episode,reward_sum)
             
             
                 
